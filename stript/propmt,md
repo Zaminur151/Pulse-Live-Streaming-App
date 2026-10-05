@@ -1,0 +1,1238 @@
+# Antigravity Agent Instructions — Flutter Live Streaming App
+
+## IMPORTANT: Stitch UI Source of Truth
+
+I want you to build a production-ready Flutter live-streaming application.
+
+The UI/UX has **already been designed in Google Stitch**.
+
+### Stitch Project ID
+
+```text
+10252584045050125697
+```
+
+**This Stitch project is the PRIMARY UI/UX SOURCE OF TRUTH.**
+
+Before implementing any UI:
+
+1. Inspect the Stitch project.
+2. Understand all available screens.
+3. Understand the navigation flow.
+4. Identify reusable components.
+5. Identify colors, typography, spacing, border radius, icons, cards, buttons, bottom navigation, dialogs, overlays, etc.
+6. Map Stitch screens to Flutter screens.
+7. Reproduce the Stitch design as accurately as practical.
+8. Do NOT redesign the application based on your own assumptions.
+
+If the Stitch design contains additional screens or components that are not explicitly mentioned in this document, implement them as well.
+
+When there is a conflict between this document and the Stitch visual design:
+
+* Use Stitch as the source of truth for **visual/UI decisions**.
+* Use this document as the source of truth for **architecture and functionality**.
+
+---
+
+# 1. Application Concept
+
+This is a live-streaming application.
+
+The same application must allow authenticated users to:
+
+* Watch live streams
+* Browse currently live users
+* Start their own live stream
+* End their live stream
+* View live stream information
+* Participate in live chat
+* View their profile
+* Edit their profile
+* View live history
+* Manage settings
+
+Any authenticated user can:
+
+* Become a viewer
+* Become a broadcaster
+
+There should NOT be separate broadcaster and viewer applications.
+
+---
+
+# 2. Backend / Streaming Architecture
+
+I do NOT have my own backend or streaming server.
+
+Use managed services.
+
+Recommended architecture:
+
+```text
+Flutter App
+    |
+    +---- Firebase Authentication
+    |
+    +---- Firestore
+    |
+    +---- Firebase Cloud Functions
+    |
+    +---- Cloudflare Stream
+    |
+    +---- HLS Video Playback
+```
+
+### Flutter
+
+Responsible for:
+
+* UI
+* Navigation
+* Camera/microphone access
+* Video playback
+* User interactions
+* Chat UI
+* Live controls
+
+### Firebase Authentication
+
+Responsible for:
+
+* Registration
+* Login
+* Logout
+* Authentication state
+* User identity
+
+### Firestore
+
+Responsible for:
+
+* User profiles
+* Live stream metadata
+* Live status
+* Comments/chat
+* Basic viewer information
+
+### Firebase Cloud Functions
+
+Responsible for:
+
+* Secure server-side operations
+* Cloudflare Stream API communication
+* Creating/managing live inputs
+* Protecting Cloudflare API credentials
+
+### Cloudflare Stream
+
+Responsible for:
+
+* Live video ingest
+* Video processing
+* Live playback
+* CDN delivery
+* Optional recording
+
+---
+
+# 3. Security Rule
+
+**NEVER put Cloudflare API tokens, secrets, or private credentials inside the Flutter application.**
+
+Flutter must communicate with Firebase Cloud Functions for privileged Cloudflare operations.
+
+Cloudflare secrets must remain server-side.
+
+---
+
+# 4. Stitch UI Implementation
+
+The Flutter UI must closely reproduce the Stitch project.
+
+Pay particular attention to:
+
+* Screen structure
+* Layout
+* Colors
+* Typography
+* Font sizes
+* Font weights
+* Spacing
+* Padding
+* Margins
+* Border radius
+* Shadows
+* Cards
+* Buttons
+* Icons
+* Images
+* Bottom navigation
+* App bars
+* Overlays
+* Dialogs
+* Empty states
+* Loading states
+* Error states
+* Permission states
+
+Do not replace the Stitch design with generic Flutter widgets that visually differ from the design.
+
+Use Flutter widgets to reproduce the design.
+
+---
+
+# 5. Clean Architecture
+
+Use Clean Architecture.
+
+Recommended structure:
+
+```text
+lib/
+├── core/
+│   ├── constants/
+│   ├── errors/
+│   ├── network/
+│   ├── routes/
+│   ├── services/
+│   ├── theme/
+│   ├── utils/
+│   └── widgets/
+│
+├── features/
+│   ├── auth/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   │
+│   ├── home/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   │
+│   ├── live/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   │
+│   ├── profile/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   │
+│   └── settings/
+│       ├── data/
+│       ├── domain/
+│       └── presentation/
+│
+└── main.dart
+```
+
+Use this dependency flow:
+
+```text
+Presentation
+      ↓
+UseCase
+      ↓
+Repository Interface
+      ↓
+Repository Implementation
+      ↓
+Data Source
+      ↓
+Firebase / Cloud Functions / Cloudflare
+```
+
+Business logic must not be placed directly inside widgets.
+
+---
+
+# 6. State Management
+
+Use **BLoC/Cubit**.
+
+Do NOT use `setState` for application/business state.
+
+Appropriate Cubits/BLoCs may include:
+
+* `AuthCubit`
+* `HomeCubit`
+* `LiveDiscoveryCubit`
+* `WatchLiveCubit`
+* `GoLiveCubit`
+* `LiveBroadcastCubit`
+* `LiveChatCubit`
+* `ViewerPresenceCubit`
+* `ProfileCubit`
+* `SettingsCubit`
+
+Use immutable states.
+
+Handle:
+
+* Initial
+* Loading
+* Success
+* Failure
+* Empty
+* Reconnecting
+* Ended
+
+states appropriately.
+
+---
+
+# 7. Reusable Custom Widgets
+
+Create reusable widgets based on the Stitch design.
+
+Examples:
+
+```text
+AppScaffold
+AppButton
+AppTextField
+AppLoadingIndicator
+AppErrorWidget
+AppEmptyWidget
+UserAvatar
+LiveBadge
+ViewerCount
+LiveStreamCard
+FeaturedLiveCard
+LiveVideoPlayer
+LiveControlButton
+GoLiveButton
+GoLiveCameraPreview
+LiveStreamOverlay
+LiveChatMessage
+LiveChatInput
+ProfileHeader
+ProfileStat
+CustomBottomNavigationBar
+SettingsItem
+ConfirmationDialog
+```
+
+Do not duplicate the same UI code across screens.
+
+Do not create unnecessary widgets for every tiny `Text` or `Container`.
+
+Create reusable components where they provide real value.
+
+---
+
+# 8. Screens
+
+Implement all screens represented in Stitch.
+
+At minimum:
+
+1. Splash Screen
+2. Login Screen
+3. Register Screen
+4. Home / Live Discovery Screen
+5. Watch Live Screen
+6. Go Live / Camera Setup Screen
+7. Live Broadcasting Screen
+8. End Live Result Screen
+9. Profile Screen
+10. Edit Profile Screen
+11. Live History Screen
+12. Settings Screen
+
+Also implement all relevant:
+
+* Loading states
+* Empty states
+* Error states
+* Permission states
+* Confirmation dialogs
+* Reconnecting states
+
+If Stitch contains additional screens, implement them too.
+
+---
+
+# 9. Navigation
+
+Use centralized routing.
+
+Suggested routes:
+
+```text
+/
+/login
+/register
+/home
+/live/:id
+/go-live
+/profile
+/profile/edit
+/live-history
+/settings
+```
+
+However, if Stitch uses a different navigation structure, follow the Stitch navigation design.
+
+Do not force a navigation pattern that conflicts with the Stitch design.
+
+---
+
+# 10. Authentication
+
+Use Firebase Authentication.
+
+Support:
+
+* Register
+* Login
+* Logout
+* Auth state persistence
+* Authentication loading
+* Authentication errors
+
+Do not call `FirebaseAuth` directly from UI widgets.
+
+Use:
+
+```text
+UI
+ ↓
+AuthCubit
+ ↓
+AuthUseCase
+ ↓
+AuthRepository
+ ↓
+AuthDataSource
+ ↓
+FirebaseAuth
+```
+
+---
+
+# 11. Home / Live Discovery
+
+The Home screen must follow the Stitch design.
+
+Display currently active live streams.
+
+Read live metadata from Firestore.
+
+Example:
+
+```text
+lives/{liveId}
+```
+
+Fields:
+
+```text
+id
+userId
+title
+status
+playbackUrl
+thumbnailUrl
+viewerCount
+startedAt
+endedAt
+createdAt
+```
+
+Only display appropriate active/live streams.
+
+If there are no live streams, show the Stitch-designed empty state.
+
+---
+
+# 12. Watch Live
+
+`WatchLiveScreen` must follow Stitch.
+
+Support:
+
+* Live video playback
+* LIVE indicator
+* Viewer count
+* Stream title
+* Broadcaster information
+* Avatar/profile
+* Chat
+* Reactions if present in Stitch
+* Mute/unmute
+* Fullscreen if present in Stitch
+* Back navigation
+* Stream ended state
+* Loading state
+* Buffering state
+* Playback error
+* Network failure
+* Reconnection state
+
+Use HLS playback for the live stream.
+
+Do NOT implement fake video playback.
+
+The playback URL must come from the actual streaming infrastructure.
+
+---
+
+# 13. Go Live
+
+The Go Live screen must closely follow Stitch.
+
+Support:
+
+* Camera preview
+* Front/back camera switching
+* Microphone enable/disable
+* Stream title
+* Camera/microphone permissions
+* Start Live button
+* Loading state
+* Error state
+
+Flow:
+
+```text
+User taps Start Live
+        ↓
+Flutter
+        ↓
+Firebase Cloud Function
+        ↓
+Cloudflare Stream
+        ↓
+Create/prepare live input
+        ↓
+Return required stream information
+        ↓
+Establish broadcaster streaming session
+        ↓
+Start actual stream
+        ↓
+Confirm streaming session
+        ↓
+Update Firestore status = live
+```
+
+### Important
+
+Do NOT set Firestore status to `live` before the actual streaming session has successfully started.
+
+---
+
+# 14. Live Broadcasting
+
+The broadcasting screen must follow Stitch.
+
+Show:
+
+* Camera preview
+* LIVE badge
+* Viewer count
+* Stream duration
+* Stream title
+* Microphone control
+* Camera switch
+* Other controls from Stitch
+* End Live button
+
+When the user selects End Live:
+
+1. Show the Stitch-designed confirmation UI.
+2. Stop streaming.
+3. Release camera.
+4. Release microphone.
+5. Update Firestore.
+6. Set status to `ended`.
+7. Set `endedAt` using server timestamp.
+8. Navigate to the end-live summary screen.
+
+Handle errors safely.
+
+---
+
+# 15. Firestore Data Model
+
+## Users
+
+```text
+users/{userId}
+```
+
+Example:
+
+```text
+id
+name
+email
+avatar
+createdAt
+```
+
+## Lives
+
+```text
+lives/{liveId}
+```
+
+Example:
+
+```text
+id
+userId
+title
+status
+playbackUrl
+thumbnailUrl
+viewerCount
+startedAt
+endedAt
+createdAt
+```
+
+## Comments
+
+```text
+lives/{liveId}/comments/{commentId}
+```
+
+Example:
+
+```text
+userId
+userName
+avatar
+message
+createdAt
+```
+
+Use Firestore server timestamps where appropriate.
+
+---
+
+# 16. Live Chat
+
+Implement chat according to Stitch.
+
+Support:
+
+* Display comments
+* User avatar
+* User name
+* Message
+* Timestamp if designed
+* Send message
+* Loading state
+* Empty chat state
+* Error handling
+
+Do not put Firestore calls directly inside widgets.
+
+Use:
+
+```text
+LiveChatCubit
+ ↓
+LiveChatUseCase
+ ↓
+LiveChatRepository
+ ↓
+FirestoreDataSource
+```
+
+---
+
+# 17. Viewer Count
+
+Viewer count must be implemented separately from normal live metadata.
+
+Create something similar to:
+
+```text
+ViewerPresenceService
+ViewerPresenceRepository
+```
+
+Do NOT perform excessive Firestore writes for every viewer event.
+
+Keep viewer presence isolated from the rest of the application.
+
+The architecture should allow migration later to a scalable presence system such as Redis or another real-time solution.
+
+---
+
+# 18. Firebase Cloud Functions
+
+Create Firebase Cloud Functions for privileged operations.
+
+Functions should:
+
+* Verify authenticated user
+* Validate requests
+* Communicate with Cloudflare Stream
+* Keep Cloudflare credentials secret
+* Return only required information to Flutter
+
+Never expose:
+
+```text
+Cloudflare API Token
+Cloudflare Account Secret
+Private Server Credentials
+```
+
+to Flutter.
+
+Use secure environment/secret configuration on the server.
+
+---
+
+# 19. Firestore Security
+
+Create appropriate Firestore security rules.
+
+Requirements:
+
+* Users can manage their own profile.
+* Users cannot modify another user's profile.
+* Users cannot arbitrarily modify another user's live stream.
+* Active live metadata can be publicly readable as appropriate.
+* Only authenticated users can send comments.
+* Viewer count cannot be arbitrarily manipulated by clients.
+* Ownership fields must be protected.
+* Important writes must be validated.
+
+Never blindly trust values coming from the Flutter client.
+
+---
+
+# 20. App Lifecycle
+
+Handle:
+
+* Foreground
+* Background
+* Inactive
+* Resumed
+* Terminated
+
+Especially during broadcasting.
+
+Properly handle:
+
+* Camera
+* Microphone
+* Streaming connection
+* Network connection
+
+IMPORTANT:
+
+Do not pretend that background live broadcasting is supported if the selected Flutter/native streaming solution does not actually support it.
+
+If background broadcasting is technically unsupported, implement safe and clear behavior.
+
+---
+
+# 21. Network Handling
+
+Handle:
+
+* Wi-Fi
+* Mobile data
+* Network loss
+* Network recovery
+* Stream disconnect
+* Video playback failure
+* Reconnecting
+* Server failure
+* Timeout
+
+Show appropriate Stitch-designed:
+
+* Loading
+* Error
+* Reconnecting
+* Empty
+
+states.
+
+Never leave users on an infinite loading screen.
+
+---
+
+# 22. Error Handling
+
+Create meaningful application failures such as:
+
+```text
+AuthFailure
+NetworkFailure
+PermissionFailure
+LiveStreamFailure
+VideoPlaybackFailure
+FirestoreFailure
+```
+
+Do not expose raw exceptions directly to users.
+
+Convert technical failures into user-friendly messages.
+
+---
+
+# 23. Design System
+
+Extract the Stitch design into centralized Flutter theme/design constants.
+
+Create:
+
+```text
+AppColors
+AppTextStyles
+AppSpacing
+AppRadius
+AppTheme
+```
+
+Use values based on Stitch wherever practical.
+
+Maintain consistency across all screens.
+
+Do not randomly introduce new colors, fonts, spacing, or component styles that conflict with Stitch.
+
+---
+
+# 24. Responsive Design
+
+Implement the Stitch design responsively.
+
+Support:
+
+* Android phones
+* iOS phones
+* Small screens
+* Large screens
+* Different aspect ratios
+
+Avoid:
+
+* Unnecessary fixed pixel positioning
+* Overflow-prone layouts
+* Hardcoded screen dimensions
+* Difficult-to-maintain rendering
+
+Prefer:
+
+* `SafeArea`
+* `MediaQuery`
+* `LayoutBuilder`
+* `Expanded`
+* `Flexible`
+* Standard Flutter responsive patterns
+
+---
+
+# 25. Dependency Injection
+
+Use dependency injection.
+
+Repositories, data sources, services and use cases should be injected rather than instantiated randomly throughout widgets.
+
+Keep dependencies testable.
+
+---
+
+# 26. Documentation
+
+For every major:
+
+* Service
+* Repository
+* UseCase
+* Cubit/BLoC
+* DataSource
+
+add useful documentation comments explaining:
+
+1. What it does
+2. Which Clean Architecture layer it belongs to
+3. Why it exists
+4. Important dependencies
+5. What it returns
+
+Do NOT add comments to every line.
+
+---
+
+# 27. Package Selection
+
+Select stable and actively maintained Flutter packages for:
+
+* Firebase
+* Authentication
+* Firestore
+* Cloud Functions
+* Camera
+* Live streaming/broadcasting
+* HLS/video playback
+* BLoC
+* Dependency injection
+* Network/connectivity
+
+Before selecting a streaming package, verify that it actually supports the required broadcaster functionality.
+
+Do NOT create fake streaming functionality.
+
+If the first package cannot properly support the required live broadcasting architecture, investigate a suitable alternative before implementation.
+
+---
+
+# 28. Testing
+
+Add appropriate tests for:
+
+* Authentication
+* Live discovery
+* Live creation
+* Live ending
+* Chat
+* Viewer presence
+* Profile
+* Important use cases
+* Important Cubits/BLoCs
+
+After major implementation stages, run:
+
+```bash
+flutter analyze
+```
+
+and relevant tests.
+
+Fix analyzer errors and important warnings.
+
+---
+
+# 29. Implementation Process
+
+Do NOT try to build everything blindly in one step.
+
+Follow this order.
+
+## Step 1 — Inspect Existing Project
+
+Inspect the existing Flutter project before modifying anything.
+
+Understand:
+
+* Current architecture
+* Existing dependencies
+* Existing screens
+* Existing theme
+* Existing routing
+* Existing Firebase configuration
+* Existing reusable widgets
+
+Do not unnecessarily delete working code.
+
+---
+
+## Step 2 — Inspect Stitch
+
+Inspect:
+
+```text
+Stitch Project ID:
+10252584045050125697
+```
+
+Understand:
+
+* All screens
+* Navigation
+* Components
+* Colors
+* Typography
+* Spacing
+* Layouts
+* States
+
+Create a mapping between Stitch screens and Flutter screens.
+
+---
+
+## Step 3 — Architecture
+
+Create or adjust the Clean Architecture structure.
+
+---
+
+## Step 4 — Design System
+
+Implement the Stitch-based:
+
+* Colors
+* Typography
+* Spacings
+* Radius
+* Theme
+
+---
+
+## Step 5 — Reusable Widgets
+
+Create reusable custom widgets based on the Stitch components.
+
+---
+
+## Step 6 — Routing
+
+Implement centralized navigation based on Stitch.
+
+---
+
+## Step 7 — Authentication
+
+Implement Firebase Authentication.
+
+---
+
+## Step 8 — Home
+
+Implement Live Discovery/Home.
+
+---
+
+## Step 9 — Firebase / Firestore
+
+Configure:
+
+* Firestore
+* Models
+* Data sources
+* Repositories
+* Security rules
+
+---
+
+## Step 10 — Cloud Functions
+
+Implement secure server-side Cloudflare integration.
+
+---
+
+## Step 11 — Cloudflare Stream
+
+Configure live streaming infrastructure.
+
+---
+
+## Step 12 — Go Live
+
+Implement camera setup and stream creation.
+
+---
+
+## Step 13 — Broadcasting
+
+Implement actual live broadcasting.
+
+---
+
+## Step 14 — Watch Live
+
+Implement HLS playback.
+
+---
+
+## Step 15 — Chat
+
+Implement Firestore-based live chat.
+
+---
+
+## Step 16 — Viewer Presence
+
+Implement isolated viewer presence/counting.
+
+---
+
+## Step 17 — Profile
+
+Implement:
+
+* Profile
+* Edit Profile
+* Live History
+
+---
+
+## Step 18 — Settings
+
+Implement Settings.
+
+---
+
+## Step 19 — Lifecycle / Network
+
+Implement:
+
+* App lifecycle
+* Camera lifecycle
+* Microphone lifecycle
+* Streaming lifecycle
+* Network recovery
+
+---
+
+## Step 20 — Security
+
+Implement and test Firestore security rules.
+
+---
+
+## Step 21 — Testing
+
+Add and run tests.
+
+---
+
+## Step 22 — Analyze
+
+Run:
+
+```bash
+flutter analyze
+```
+
+Fix important issues.
+
+---
+
+## Step 23 — README
+
+Create/update the project README.
+
+---
+
+# 30. Existing Project Rule
+
+Before changing anything:
+
+**Inspect the existing project first.**
+
+Do not unnecessarily delete or rewrite working code.
+
+Reuse existing useful infrastructure where appropriate.
+
+If an existing package or architecture conflicts with these requirements, explain why before replacing it.
+
+---
+
+# 31. README Requirements
+
+Create/update `README.md` with:
+
+* Project overview
+* Stitch Project ID
+* UI implementation approach
+* Architecture
+* Folder structure
+* Screens
+* Navigation
+* State management
+* Firebase setup
+* Firestore structure
+* Cloud Functions
+* Cloudflare Stream setup
+* Required environment/secrets
+* Required packages
+* Android permissions
+* iOS permissions
+* Camera requirements
+* Microphone requirements
+* Live broadcasting flow
+* Live playback flow
+* Chat flow
+* Viewer count architecture
+* Security rules
+* Testing
+* Build/deployment instructions
+
+---
+
+# 32. Final Rules
+
+These rules have the highest priority during implementation.
+
+1. **Stitch Project ID `10252584045050125697` is the PRIMARY UI/UX reference.**
+
+2. Reproduce the Stitch design in Flutter as closely as practical.
+
+3. Do not invent a completely different UI.
+
+4. The same Flutter app must support both viewers and broadcasters.
+
+5. Any authenticated user can watch live streams.
+
+6. Any authenticated user can start a live stream.
+
+7. Use Firebase Authentication.
+
+8. Use Firestore for application data.
+
+9. Use Firebase Cloud Functions for privileged server-side operations.
+
+10. Use Cloudflare Stream for live video infrastructure.
+
+11. Never expose Cloudflare secrets in Flutter.
+
+12. Use Clean Architecture.
+
+13. Use BLoC/Cubit.
+
+14. Use reusable custom widgets.
+
+15. Keep business logic outside UI widgets.
+
+16. Handle permissions correctly.
+
+17. Handle app lifecycle correctly.
+
+18. Handle network failures correctly.
+
+19. Handle streaming failures correctly.
+
+20. Do not fake functionality that the selected streaming infrastructure cannot actually provide.
+
+21. Keep the implementation production-oriented.
+
+22. Avoid unnecessary overengineering.
+
+23. Do not leave core functionality as TODOs.
+
+24. Preserve existing working code unless a change is necessary.
+
+25. When there is a conflict between textual UI requirements and Stitch, prefer Stitch for visual/UI decisions.
+
+26. Inspect Stitch **before implementing the UI**.
+
+27. Do not start by designing your own UI.
+
+---
+
+# START
+
+Start by:
+
+1. Inspecting the existing Flutter project.
+2. Inspecting Stitch Project `10252584045050125697`.
+3. Creating a screen/component mapping between Stitch and Flutter.
+4. Inspecting the existing dependencies and architecture.
+5. Then begin implementation incrementally.
+
+The final Flutter application should look and feel like the Stitch design while implementing the complete live-streaming functionality described above.
